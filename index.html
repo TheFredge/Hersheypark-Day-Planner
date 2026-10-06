@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}</style>
+<title>Hersheypark Day Planner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: sticky header, one scrolling column (max 720px), fixed bottom tab bar. Ride-ticket look: cocoa ink, electric blue accent, traffic-light wait colors. */
+:root{
+  --bg:#f1eeeb; --surface:#ffffff; --surface2:#e8e3de; --ink:#26191a; --muted:#6f625f; --line:#d9d2cc;
+  --accent:#3a3de8; --accent-ink:#ffffff; --accent-soft:#e3e4fd;
+  --go:#1e8e4e; --go-soft:#d6f0e0; --mid:#b97800; --mid-soft:#fbe8c0; --stop:#c8372d; --stop-soft:#f9d9d5; --off:#8a7f7b; --off-soft:#e5dfdb;
+  --display:'Bricolage Grotesque','Avenir Next','Segoe UI',sans-serif; --body:'DM Sans','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#171211; --surface:#231c1b; --surface2:#2f2625; --ink:#f4ece8; --muted:#a99b96; --line:#3a2f2d;
+  --accent:#8a8dff; --accent-ink:#13113a; --accent-soft:#2a2b57;
+  --go:#4fd48a; --go-soft:#173a28; --mid:#f2b63d; --mid-soft:#41300f; --stop:#ff7b6e; --stop-soft:#4a1f1b; --off:#9a8e8a; --off-soft:#352c2a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171211; --surface:#231c1b; --surface2:#2f2625; --ink:#f4ece8; --muted:#a99b96; --line:#3a2f2d;
+  --accent:#8a8dff; --accent-ink:#13113a; --accent-soft:#2a2b57;
+  --go:#4fd48a; --go-soft:#173a28; --mid:#f2b63d; --mid-soft:#41300f; --stop:#ff7b6e; --stop-soft:#4a1f1b; --off:#9a8e8a; --off-soft:#352c2a; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--body);padding-inline:16px;padding-block:0 84px;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px}
+header h1{font:800 20px/1 var(--display);margin:0;letter-spacing:-.01em}
+header h1 small{display:block;font:500 11px/1.3 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.sync{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);text-align:right}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--off);flex:none}
+.dot.live{background:var(--go)}.dot.bad{background:var(--stop)}
+.iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-width:40px;height:40px;display:grid;place-items:center}
+section{display:flex;flex-direction:column;gap:16px;padding-block:16px}
+h2{font:800 22px/1.15 var(--display);margin:0;letter-spacing:-.01em;text-wrap:balance}
+h3{font:700 12px/1.2 var(--body);margin:0;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.row{display:flex;gap:12px;align-items:center;min-width:0}.row.sb{justify-content:space-between}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.muted{color:var(--muted)}.small{font-size:13px}
+.num{font-variant-numeric:tabular-nums}
+.banner{border-radius:12px;padding:12px 14px;font-size:13px;background:var(--mid-soft);color:var(--ink);border:1px solid var(--mid)}
+.banner.info{background:var(--accent-soft);border-color:var(--accent)}
+/* hero ticket */
+.ticket{background:var(--ink);color:var(--bg);border-radius:18px;padding:20px 18px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+.ticket .big{font:800 clamp(34px,10vw,52px)/.95 var(--display);letter-spacing:-.02em}
+.ticket .lab{font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.ticket .stubs{display:flex;gap:10px;flex-wrap:wrap}
+.stub{border:1px dashed color-mix(in srgb,var(--bg) 45%,transparent);border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stub b{font:700 16px var(--display)}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:10px 14px;font-weight:700;min-height:40px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.ticket .btn{background:var(--bg);color:var(--ink)}.ticket .btn.ghost{background:transparent;color:var(--bg);border-color:color-mix(in srgb,var(--bg) 45%,transparent)}
+.seg{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:12px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:7px 12px;border-radius:9px;font-weight:500;font-size:14px;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--surface);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.18)}
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+.chip.go{background:var(--go-soft);color:var(--go)}.chip.mid{background:var(--mid-soft);color:var(--mid)}.chip.stop{background:var(--stop-soft);color:var(--stop)}.chip.off{background:var(--off-soft);color:var(--off)}
+.wait{font:800 20px/1 var(--display);min-width:54px;text-align:right}
+/* waits list */
+.list{display:flex;flex-direction:column}
+.ride{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.ride:first-child{border-top:0}
+.ride .nm{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.ride .meta{font-size:12px;color:var(--muted)}
+.ride .acts{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.mini{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 10px;font-size:13px;font-weight:500;min-height:32px}
+.mini.on{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+/* map */
+.mapbox{background:var(--surface2);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative;touch-action:none}
+.mapbox svg{display:block;width:100%;height:auto;max-height:70vh;cursor:grab}
+.zoomctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+/* plan */
+.bar{height:10px;background:var(--surface2);border-radius:99px;overflow:hidden}.bar>span{display:block;height:100%;background:var(--go);border-radius:99px;transition:width .3s}
+.item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.check{width:32px;height:32px;border-radius:9px;border:2px solid var(--ink);background:transparent;display:grid;place-items:center;padding:0}
+.check[aria-checked="true"]{background:var(--go);border-color:var(--go);color:#fff}
+.item .t{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.item.done .lbl{text-decoration:line-through;color:var(--muted)}
+.item .lbl{font-weight:700;overflow-wrap:anywhere}
+.kind{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+input,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-height:40px;min-width:0;max-width:100%}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+/* weather */
+.hours{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.hr{flex:none;width:58px;text-align:center;border:1px solid var(--line);border-radius:12px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px}
+.hr b{font:800 16px var(--display)}
+/* stats */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile b{font:800 34px/1 var(--display);letter-spacing:-.02em}
+.tile span{font-size:13px;color:var(--muted)}
+.award{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.award:first-child{border-top:0}
+.award .ic{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:800 16px var(--display)}
+.stars{display:flex;gap:2px}.stars button{border:0;background:none;padding:2px;font-size:20px;line-height:1;color:var(--line)}.stars button.on{color:var(--mid)}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center}
+nav .in{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:100%;max-width:720px}
+nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:10px;font-size:11px;font-weight:500;color:var(--muted);min-height:48px}
+nav button[aria-current="page"]{color:var(--accent);font-weight:700;background:var(--accent-soft)}
+nav svg{width:22px;height:22px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Hersheypark Day Planner<small id="sub">Hershey, PA</small></h1>
+  <div class="sync"><span id="syncTxt">Connecting…</span><span class="dot" id="syncDot"></span><button class="iconbtn" id="refresh" aria-label="Refresh wait times and weather"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg></button></div>
+</header>
+
+<section id="v-today"></section>
+<section id="v-map" hidden></section>
+<section id="v-waits" hidden></section>
+<section id="v-plan" hidden></section>
+<section id="v-wrap" hidden></section>
+</div>
+
+<nav><div class="in" id="tabs"></div></nav>
+
+<script>
+const API='https://api.themeparks.wiki/v1', DEST='6e1c96c1-dafc-4c26-a3d3-1b28c888daa8', TZ='America/New_York';
+const LAT=40.2878, LON=-76.6591;
+const WXSNAP=null, WXSNAP_DATE='Oct 6';
+const RIDES=[{"id":"70786511-ad30-44ce-920b-8845f94afc6a","n":"Balloon Flite","c":"family","la":40.28727,"lo":-76.656598},{"id":"2caa450e-b708-4a77-9186-179d876b881b","n":"Candymonium","c":"coaster","la":40.286327,"lo":-76.658363,"h":[210,76]},{"id":"850c4d90-6847-469f-a008-8bd041e25e8f","n":"Carrousel","c":"family","la":40.287276,"lo":-76.658381},{"id":"42f16c88-cb0b-47fe-ae6d-12b672e1c1b2","n":"Coal Cracker","c":"family","la":40.286894,"lo":-76.653844},{"id":"cf3a1800-f2e9-494a-9027-2b74196f89fd","n":"Cocoa Cruiser","c":"family","la":40.288412,"lo":-76.655015},{"id":"e61bf4d9-9c48-4f2d-81c8-7eecee2bbabc","n":"Comet","c":"coaster","la":40.287252,"lo":-76.655023},{"id":"399cb38e-479d-4ac1-9f91-bb3654d812f9","n":"Convoy","c":"family","la":40.288148,"lo":-76.653113},{"id":"3234afad-caf1-425d-bb8a-c2fdbd49a28f","n":"Dizzy Drums","c":"kids","la":40.288305,"lo":-76.655152},{"id":"a4751594-cc38-421d-a980-74102c5eade3","n":"Dry Gulch Railroad","c":"family","la":40.289179,"lo":-76.655577},{"id":"04d91e60-4fb7-4040-9fa6-ad96c7850458","n":"Fahrenheit","c":"coaster","la":40.290304,"lo":-76.655136,"h":[121,58]},{"id":"4c0492a7-f91b-409f-83e9-c98017f8caa7","n":"Fender Bender","c":"kids","la":40.288051,"lo":-76.654943},{"id":"2f29fe62-da64-42d3-9a6a-323ab2134301","n":"Ferris Wheel","c":"family","la":40.293208,"lo":-76.654111},{"id":"70f20f1c-07a2-44ce-b9cb-231889099b44","n":"Frog Hopper","c":"kids","la":40.288264,"lo":-76.653129},{"id":"e5bb6437-fed5-49a3-8ce7-3a5a46e3821b","n":"Granny Bugs","c":"kids","la":40.293484,"lo":-76.654201},{"id":"ebcebe6c-d151-44b2-bb2f-56806f085cfa","n":"Great Bear","c":"coaster","la":40.287122,"lo":-76.652939,"h":[124,60]},{"id":"65f4c116-0baa-4bcb-9986-2dcd57588993","n":"Helicopters","c":"family","la":40.286651,"lo":-76.655915},{"id":"8ee1b115-9902-4021-afa0-0cce4b7a416c","n":"Triple Tower \u00b7 Kisses","c":"thrill","la":40.288097,"lo":-76.653543},{"id":"468c9c7e-eac9-4f12-a4a4-5889e6b750e3","n":"Triple Tower \u00b7 Hershey's","c":"thrill","la":40.288098,"lo":-76.653541},{"id":"eb0c727e-37d1-4cf0-ba79-5defac0b8488","n":"Triple Tower \u00b7 Reese's","c":"thrill","la":40.288097,"lo":-76.653543},{"id":"752296c5-95bd-4bfc-8c00-4487ee1ba4c3","n":"Jolly Rancher Remix","c":"thrill","la":40.289937,"lo":-76.654047},{"id":"26e53099-9a66-44b8-8a16-320eddfc419c","n":"Kissing Tower","c":"thrill","la":40.28722,"lo":-76.652293,"h":[250,0]},{"id":"9c56fa3c-dc9d-4190-89c1-68ad92337912","n":"Laff Trakk","c":"coaster","la":40.293497,"lo":-76.655624},{"id":"d85d6f5d-71a7-4ffa-b179-01418b4ea0a3","n":"Liberty Flyers","c":"thrill","la":40.289426,"lo":-76.655334},{"id":"d588bd32-c1fd-437f-8e71-27cd91926270","n":"Lightning Racer","c":"coaster","la":40.293598,"lo":-76.653808},{"id":"7343456b-2fbf-4e43-b640-c331d9a739c5","n":"Livery Stables","c":"kids","la":40.289649,"lo":-76.65516},{"id":"6b40cf62-dc59-4fea-88bd-3e2ff9e77877","n":"Mini Himalaya","c":"kids","la":40.286781,"lo":-76.656644},{"id":"6b229c06-6eb6-42c3-b3dc-9b226be5d010","n":"Mini Pirate","c":"kids","la":40.28821,"lo":-76.655222},{"id":"9afb4ea8-5907-4b4b-b964-c2ea98746f15","n":"Mini Scrambler","c":"kids","la":40.289635,"lo":-76.655356},{"id":"5dc69cad-e806-47df-b7ac-e180a537354b","n":"Minty Bees","c":"kids","la":40.287717,"lo":-76.655104},{"id":"a3dd0327-5304-4d4a-8e6d-d8801c6375f3","n":"Misfit Bug","c":"kids","la":40.287826,"lo":-76.655287},{"id":"21b4777d-96af-434b-863a-f48831aeec9f","n":"Mix'd","c":"thrill","la":40.289834,"lo":-76.654206},{"id":"591888d0-5a42-4ced-aaff-320159348ef8","n":"Monorail","c":"family","la":40.28819,"lo":-76.655576},{"id":"7f3f8631-ebfb-44dd-bd90-93fddcfcda51","n":"Music Express","c":"family","la":40.293792,"lo":-76.654046},{"id":"ebc7e991-e9e1-461e-a990-ff028eea83d7","n":"Pirate","c":"thrill","la":40.289011,"lo":-76.655393},{"id":"5de0246c-caa4-407c-b38f-6a936afc4b75","n":"Pony Parade","c":"kids","la":40.293462,"lo":-76.654304},{"id":"c5f4f8f1-73c5-4803-9256-15913a51bb4d","n":"Red Baron","c":"kids","la":40.290947,"lo":-76.655077},{"id":"afeb8e4a-899f-4fb1-9fea-d4f41873a0cf","n":"Reese's Cupfusion","c":"thrill","la":40.28782,"lo":-76.655515},{"id":"760007cc-ad10-44fc-adc6-9839b883d692","n":"Scrambler","c":"thrill","la":40.286874,"lo":-76.655724},{"id":"508afdd7-999c-4bbc-8a7e-7f41338d7140","n":"Skyrush","c":"coaster","la":40.286533,"lo":-76.655315,"h":[200,75]},{"id":"deb8995f-4476-41a7-bb8b-072111a41589","n":"Space Age","c":"thrill","la":40.286748,"lo":-76.655851},{"id":"7836c62b-b6d6-4fcd-b570-1ba0dc1d1558","n":"Starship America","c":"thrill","la":40.287389,"lo":-76.65636},{"id":"1126cadd-70fc-4675-b3ff-301901e4db8e","n":"Storm Runner","c":"coaster","la":40.289775,"lo":-76.653445,"h":[150,72]},{"id":"bb3fe614-137b-4b37-836e-bd1d90b27b40","n":"Sweet Swing","c":"family","la":40.287572,"lo":-76.654737},{"id":"f2adb869-b6c7-4f8f-aa09-edcb02789fbe","n":"Swing Thing","c":"family","la":40.287972,"lo":-76.655428},{"id":"298aa977-2650-47c1-b613-ebefdb17e371","n":"Tea Cups","c":"family","la":40.287654,"lo":-76.654544},{"id":"8a098619-bd46-4c75-97ff-8d99a380a675","n":"The Claw","c":"thrill","la":40.289187,"lo":-76.655916},{"id":"3cbbd0c3-5c4f-4a6d-a505-09bf017bd834","n":"The Howler","c":"thrill","la":40.290018,"lo":-76.654921},{"id":"c772042f-e5de-402a-81c2-2dbe6ecb9312","n":"Tilt-A-Whirl","c":"family","la":40.286633,"lo":-76.656274},{"id":"04450da1-0def-4728-b070-d58030d23476","n":"Tiny Tracks","c":"kids","la":40.293697,"lo":-76.653812},{"id":"8d869f10-5d22-4dcf-932b-4238fd3877de","n":"Traffic Jam","c":"thrill","la":40.286595,"lo":-76.656},{"id":"172ae359-15d8-4e07-8228-8171efa9b141","n":"Trailblazer","c":"coaster","la":40.288835,"lo":-76.653215},{"id":"35f1ff38-22ed-4539-9e70-2e71dba129ef","n":"Twin Turnpike \u00b7 Classic Cars","c":"family","la":40.2871,"lo":-76.652298},{"id":"f6c263b5-347e-4308-b308-7f2d571b0b59","n":"Twin Turnpike \u00b7 Speedway","c":"family","la":40.286997,"lo":-76.652679},{"id":"86b412ed-dc92-4922-997d-80e120d21285","n":"Twizzlers Twisted Gravity","c":"thrill","la":40.287157,"lo":-76.653926},{"id":"75b4e503-dc95-411a-8c1d-59b50dcbee1b","n":"Wave Swinger","c":"thrill","la":40.286868,"lo":-76.654851},{"id":"1c8e6a07-6d17-4677-a521-28907254656b","n":"Wild Mouse","c":"coaster","la":40.292817,"lo":-76.654881},{"id":"7018ed2b-5c1e-4e35-95cd-c14e67a3a19e","n":"Wildcat's Revenge","c":"coaster","la":40.292807,"lo":-76.655203},{"id":"92824437-8497-4b6b-a5ae-25a54640c270","n":"sooperdooperLooper","c":"coaster","la":40.286234,"lo":-76.6549}];
+const BYID=Object.fromEntries(RIDES.map(r=>[r.id,r])), BYNAME=Object.fromEntries(RIDES.map(r=>[r.n,r.id]));
+const CATS={coaster:'Coaster',thrill:'Thrill',family:'Family',kids:'Kids'};
+const pad=n=>String(n).padStart(2,'0');
+const dObj=d=>{const[y,m,x]=d.split('-').map(Number);return new Date(Date.UTC(y,m-1,x,12))};
+const dStr=o=>o.getUTCFullYear()+'-'+pad(o.getUTCMonth()+1)+'-'+pad(o.getUTCDate());
+const addDays=(d,n)=>{const o=dObj(d);o.setUTCDate(o.getUTCDate()+n);return dStr(o)};
+const dFmt=(d,o)=>new Intl.DateTimeFormat('en-US',{timeZone:'UTC',...o}).format(dObj(d));
+const dayLabel=d=>dFmt(d,{weekday:'long'}),dayShort=d=>dFmt(d,{weekday:'short',month:'short',day:'numeric'}),dayLong=d=>dFmt(d,{weekday:'long',month:'long',day:'numeric'}),dayTiny=d=>dFmt(d,{weekday:'short'})+' '+dObj(d).getUTCDate();
+const todayStr=()=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ}).format(new Date());
+const toMin=h=>{const[a,b]=h.split(':').map(Number);return a*60+b},fromMin=m=>pad(Math.floor(m/60))+':'+pad(m%60);
+function nextSaturday(){const t=todayStr();const w=dObj(t).getUTCDay();return addDays(t,(6-w+7)%7)}
+
+/* ---------- default itinerary (editable in the Plan tab) ---------- */
+const R=n=>({kind:'ride',ride:n});
+const DEFAULT_PLAN={
+ long:[
+  {t:'11:45',kind:'note',label:'Arrive, park, walk in'},
+  {t:'12:15',...R('Skyrush')},{t:'12:45',...R('Candymonium')},{t:'13:15',...R('sooperdooperLooper')},
+  {t:'13:45',kind:'food',label:'Lunch break'},
+  {t:'14:30',...R('Great Bear')},{t:'15:00',...R('Storm Runner')},{t:'15:30',...R('Fahrenheit')},
+  {t:'16:00',...R('Twizzlers Twisted Gravity')},{t:'16:30',...R('Kissing Tower')},
+  {t:'17:00',kind:'food',label:'Snack and chocolate stop'},
+  {t:'17:45',...R('Lightning Racer')},{t:'18:15',...R("Wildcat's Revenge")},{t:'18:45',...R('Laff Trakk')},
+  {t:'19:15',kind:'food',label:'Dinner'},
+  {t:'20:15',...R('Ferris Wheel')},{t:'20:45',...R('Carrousel')},{t:'21:15',...R('Candymonium')},{t:'21:40',...R('Skyrush')}],
+ easy:[
+  {t:'11:45',kind:'note',label:'Arrive, park, walk in'},
+  {t:'12:15',...R('Comet')},{t:'12:45',...R('Trailblazer')},{t:'13:15',...R('Wild Mouse')},
+  {t:'13:45',kind:'food',label:'Lunch break'},
+  {t:'14:30',...R('Monorail')},{t:'15:00',...R('Dry Gulch Railroad')},{t:'15:30',...R('Tilt-A-Whirl')},
+  {t:'16:00',...R('Storm Runner')},{t:'16:30',...R('Great Bear')},
+  {t:'17:00',kind:'food',label:'Dinner'},
+  {t:'18:00',kind:'note',label:'Souvenirs and sweets'},
+  {t:'19:00',...R('Skyrush')},{t:'19:30',...R('Candymonium')},{t:'20:15',kind:'note',label:'Head for the exit'}]
+};
+function seedDay(d,idx,arrive){const tpl=DEFAULT_PLAN[idx%2?'easy':'long'];const shift=(arrive?toMin(arrive):705)-705;
+  return tpl.map(it=>({id:d+'_'+(S.seq++),t:fromMin(Math.max(0,Math.min(1435,toMin(it.t)+shift))),kind:it.kind,ride:it.ride?BYNAME[it.ride]:null,label:it.label||null})).filter(it=>it.kind!=='ride'||it.ride)}
+
+/* ---------- state ---------- */
+const KEY='hersheypark-weekend-v1';
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){S=null}
+if(S&&!S.plan)S=null;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+if(S&&!S.days){const m={sat:'2026-10-10',sun:'2026-10-11'},np={},na={},nl={};S.days=Object.values(m);for(const k in m){np[m[k]]=(S.plan||{})[k]||[];if((S.arrive||{})[k])na[m[k]]=S.arrive[k];if((S.leave||{})[k])nl[m[k]]=S.leave[k]}S.plan=np;S.arrive=na;S.leave=nl}
+if(!S||!S.days){const s1=nextSaturday();S={days:[s1,addDays(s1,1)],plan:{},done:{},rate:{},arrive:{},leave:{},seq:100};S.days.forEach((d,i)=>S.plan[d]=seedDay(d,i))}
+const days=()=>S.days.slice().sort();
+function pickDay(){const ds=days(),t=todayStr();return ds.includes(t)?t:ds.find(d=>d>t)||ds[ds.length-1]||null}
+const UI={tab:'today',day:pickDay(),filter:'all',sort:'wait',demo:false,sel:null,edit:false,route:true,zoom:1,vx:0,vy:0};
+
+/* ---------- helpers ---------- */
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=s=>document.querySelector(s);
+const fmtT=(hhmm)=>{const[h,m]=hhmm.split(':').map(Number);return(h%12||12)+':'+String(m).padStart(2,'0')+(h<12?' am':' pm')};
+const fmtHour=h=>(h%12||12)+(h<12?'a':'p');
+const fmtClock=ts=>new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZone:TZ}).format(new Date(ts));
+const nowParts=()=>{const f=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(new Date()).reduce((a,p)=>(a[p.type]=p.value,a),{});return{date:`${f.year}-${f.month}-${f.day}`,min:(+f.hour%24)*60+ +f.minute}};
+function hash(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h)}
+const ICON={
+ today:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+ map:'<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+ waits:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ plan:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 9l2 2 3-4M8 16h8"/>',
+ wrap:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/>'};
+const TABS=[['today','Today'],['map','Map'],['waits','Waits'],['plan','Plan'],['wrap','Recap']];
+const svgi=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[n]}</svg>`;
+
+/* ---------- live data ---------- */
+let WXSTALE=false;
+let LIVE={ok:false,err:null,at:null,rides:{}}, SCHED={}, WX=null, WXERR=null;
+function demoWait(r){const base={coaster:55,thrill:30,family:15,kids:8}[r.c];return Math.max(5,Math.round((base*(0.5+(hash(r.id)%100)/100))/5)*5)}
+function rideLive(id){
+  const r=BYID[id];
+  if(UI.demo)return{status:'OPERATING',wait:demoWait(r),demo:true};
+  return LIVE.rides[id]||{status:null,wait:null};
+}
+const wcls=(l)=>{if(l.status&&l.status!=='OPERATING')return'off';if(l.wait==null)return'off';return l.wait<=15?'go':l.wait<=35?'mid':'stop'};
+const wcol={go:'var(--go)',mid:'var(--mid)',stop:'var(--stop)',off:'var(--off)'};
+const stText=l=>l.status==null?'No data':l.status==='OPERATING'?(l.wait==null?'Open':l.wait+' min'):l.status==='CLOSED'?'Closed':l.status==='DOWN'?'Down':l.status==='REFURBISHMENT'?'Refurb':l.status;
+
+async function getJSON(u){const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+async function loadLive(){
+  try{
+    const d=await getJSON(`${API}/entity/${DEST}/live`);
+    const m={};for(const e of d.liveData||[]){const q=e.queue&&e.queue.STANDBY;m[e.id]={status:e.status,wait:q&&q.waitTime!=null?q.waitTime:null,upd:e.lastUpdated}}
+    LIVE={ok:true,err:null,at:Date.now(),rides:m};
+  }catch(e){LIVE.ok=false;LIVE.err=e.message||'Network error'}
+}
+async function loadSched(){
+  try{const d=await getJSON(`${API}/entity/${DEST}/schedule`);const p=(d.parks&&d.parks[0]&&d.parks[0].schedule)||[];for(const s of p)if(s.type==='OPERATING')SCHED[s.date]={open:s.openingTime.slice(11,16),close:s.closingTime.slice(11,16)}}catch(e){}
+}
+async function loadWx(){
+  try{
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&hourly=temperature_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunset&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=${encodeURIComponent(TZ)}&forecast_days=16`;
+    WX=await getJSON(u);WXERR=null;WXSTALE=false;
+  }catch(e){WXERR=e.message||'Network error';if(!WX&&WXSNAP){WX=WXSNAP;WXSTALE=true}}
+}
+function wxInfo(c){
+  if(c===0)return['Clear','sun'];if(c<=2)return['Partly cloudy','pc'];if(c===3)return['Overcast','cloud'];
+  if(c===45||c===48)return['Fog','fog'];if(c>=51&&c<=57)return['Drizzle','rain'];if(c>=61&&c<=67)return['Rain','rain'];
+  if(c>=71&&c<=77)return['Snow','snow'];if(c>=80&&c<=82)return['Showers','rain'];if(c>=85&&c<=86)return['Snow showers','snow'];if(c>=95)return['Thunderstorm','storm'];return['Mixed','cloud']}
+function wxIcon(k,s=28){
+  const cl='<path d="M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1A4.5 4.5 0 0 1 17 18z"/>';
+  const p={sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>',
+   pc:'<circle cx="8" cy="8" r="3"/><path d="M8 2v1M2 8h1M3.8 3.8l.7.7M12.2 3.8l-.7.7"/><path d="M9 20a3.5 3.5 0 0 1 0-7 4.5 4.5 0 0 1 8.6-.8A4 4 0 0 1 18 20z"/>',
+   cloud:cl,fog:'<path d="M4 9h16M3 13h18M6 17h12"/>',rain:cl+'<path d="M8 21l1-2M12 21l1-2M16 21l1-2"/>',snow:cl+'<path d="M9 20h.01M13 21h.01M17 20h.01"/>',storm:cl+'<path d="M12 14l-2 4h3l-1 3"/>'}[k];
+  return`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`}
+
+/* ---------- plan helpers ---------- */
+const itemsFor=d=>(S.plan[d]||[]).slice().sort((a,b)=>a.t.localeCompare(b.t));
+const itemName=it=>it.ride?BYID[it.ride].n:it.label;
+const isDone=id=>!!S.done[id];
+function hoursFor(d){return SCHED[d]||null}
+const hrsTxt=d=>{const h=hoursFor(d);return h?fmtT(h.open)+' – '+fmtT(h.close):'Not posted yet'};
+const dayPicker=()=>S.days.length?`<div class="seg" role="group" aria-label="Day">${days().map(k=>`<button data-day="${k}" aria-pressed="${UI.day===k}">${esc(dayShort(k))}</button>`).join('')}</div>`:'';
+const tripTitle=()=>{const ds=days();return !ds.length?'No days chosen':ds.length===1?dayShort(ds[0]):dayShort(ds[0])+' to '+dayShort(ds[ds.length-1])};
+function toggleDone(id){
+  if(S.done[id])delete S.done[id];
+  else{const it=Object.values(S.plan).flat().find(x=>x.id===id);const w=it&&it.ride?rideLive(it.ride).wait:null;S.done[id]={ts:Date.now(),wait:w}}
+  save();render()}
+function togglePlan(rideId,day){
+  const items=itemsFor(day);const have=items.filter(i=>i.ride===rideId);
+  if(have.length){const g=have[have.length-1];S.plan[day]=S.plan[day].filter(i=>i.id!==g.id);delete S.done[g.id]}
+  else{const last=items.length?items[items.length-1].t:'12:00';const m=Math.min(1435,toMin(last)+30);S.plan[day].push({id:day+'_'+(S.seq++),t:fromMin(m),kind:'ride',ride:rideId,label:null})}
+  save();render()}
+const rideDayBtns=id=>days().map(d=>{const on=(S.plan[d]||[]).some(i=>i.ride===id);return`<button class="mini ${on?'on':''}" data-addplan="${id}" data-d="${d}" aria-pressed="${on}" aria-label="${on?'Remove from':'Add to'} ${esc(dayLong(d))} plan">${on?'✓':'+'} ${esc(dayTiny(d))}</button>`}).join('');
+
+/* ---------- views ---------- */
+function banner(){
+  if(UI.demo)return`<div class="banner info"><b>Demo waits are on.</b> These numbers are made up so you can see how the map and list look on a busy day. Turn them off in Waits.</div>`;
+  if(!LIVE.ok&&LIVE.err)return`<div class="banner"><b>Live wait times can't load in this view.</b> The map, ride list and plan still work. Open the standalone copy of this app for live waits. (${esc(LIVE.err)})</div>`;
+  const open=Object.values(LIVE.rides).filter(l=>l.status==='OPERATING').length;
+  if(LIVE.ok&&open===0)return`<div class="banner info"><b>No rides are running right now.</b> Live waits appear once the park opens.</div>`;
+  return''}
+
+function viewToday(){
+  const np=nowParts(),ds=days(),dd=UI.day;
+  const fut=ds.filter(d=>d>=np.date);
+  let big='Pick your park days';
+  if(ds.length){if(ds.includes(np.date))big='It is park day';else if(fut.length){const n=Math.round((dObj(fut[0])-dObj(np.date))/864e5);big=`${n} day${n>1?'s':''} to go`}else big='Trip complete'}
+  const ticket=`<div class="ticket"><div class="lab">Your trip · ${esc(tripTitle())}</div><div class="big">${big}</div>
+    <div class="stubs">${ds.map(d=>`<div class="stub"><span class="lab">${esc(dayShort(d))}</span><b>${hrsTxt(d)}</b></div>`).join('')}</div>
+    <div class="row"><button class="btn ghost" data-tab="plan">Change days</button></div></div>`;
+  if(!dd)return ticket+`<div class="card"><b>No park days yet.</b><div class="muted small">Add the dates you're visiting in the Plan tab and each one gets its own checklist, weather and map route.</div></div>`;
+  const next=itemsFor(dd).find(i=>!isDone(i.id));
+  const live=Object.entries(LIVE.rides).filter(([id,l])=>BYID[id]&&l.status==='OPERATING'&&l.wait!=null);
+  const shortest=(UI.demo?RIDES.map(r=>[r.id,rideLive(r.id)]):live).filter(([id])=>BYID[id].c!=='kids').sort((a,b)=>a[1].wait-b[1].wait).slice(0,3);
+  const done=itemsFor(dd).filter(i=>isDone(i.id)).length,tot=itemsFor(dd).length;
+  const arr=S.arrive[dd],lv=S.leave[dd];
+  return`${ticket}
+  ${banner()}
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="row sb"><h3>Weather at the park</h3><span class="small muted">Open-Meteo</span></div>
+    ${viewWx(dd)}
+  </div>
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="row sb"><h3>${esc(dayLabel(dd))} plan</h3>${dayPicker()}</div>
+    <div class="row sb"><div class="bar" style="flex:1"><span style="width:${tot?done/tot*100:0}%"></span></div><span class="small num muted">${done} of ${tot} done</span></div>
+    ${next?`<div class="row sb"><div style="min-width:0"><div class="kind">Up next · ${fmtT(next.t)}</div><div style="font:800 20px var(--display);overflow-wrap:anywhere">${esc(itemName(next))}</div></div>${next.ride?waitChip(next.ride):''}</div>
+    <div class="row"><button class="btn" data-done="${next.id}">Mark done</button><button class="btn ghost" data-tab="plan">Full plan</button></div>`:`<div class="muted">${tot?"Everything on this day's plan is done. Check the Recap tab.":"Nothing planned for this day yet. Build it in the Plan tab."}</div>`}
+    <div class="row" style="flex-wrap:wrap">
+      ${arr?`<span class="chip go">In park since ${fmtClock(arr)}</span>`:`<button class="mini" data-arrive="${dd}">We're at the park</button>`}
+      ${arr&&!lv?`<button class="mini" data-leave="${dd}">Heading home</button>`:''}${lv?`<span class="chip off">Left at ${fmtClock(lv)}</span>`:''}
+    </div>
+  </div>
+  <div class="card" style="display:flex;flex-direction:column;gap:6px">
+    <h3>Shortest lines right now</h3>
+    ${shortest.length?shortest.map(([id,l])=>`<div class="row sb" style="padding:6px 0"><span style="font-weight:700;overflow-wrap:anywhere">${esc(BYID[id].n)}</span><span class="chip ${wcls(l)}">${l.wait} min</span></div>`).join(''):`<div class="muted small">Nothing to show until rides open. Hit Waits and try the demo toggle to preview.</div>`}
+  </div>`}
+
+function waitChip(id){const l=rideLive(id);return`<span class="chip ${wcls(l)}">${esc(stText(l))}</span>`}
+
+function advice(dkey){
+  if(!WX)return'';const i=WX.daily.time.indexOf(dkey);if(i<0)return'';
+  const hi=WX.daily.temperature_2m_max[i],lo=WX.daily.temperature_2m_min[i],pop=WX.daily.precipitation_probability_max[i];
+  const t=[];
+  if(lo<50)t.push('Bring a jacket for the evening.');if(hi>=80)t.push('Bring sunscreen and water.');
+  if(pop>=40)t.push('Pack ponchos. Rain can pause the coasters.');else if(pop>=20)t.push('Small chance of rain, a poncho is cheap insurance.');
+  if(!t.length)t.push('Comfortable day for walking the park.');return t.join(' ')}
+function viewWx(dkey){
+  if(!WX)return`<div class="muted small">${WXERR?"Couldn't load the forecast ("+esc(WXERR)+"). Tap refresh to try again.":'Loading forecast…'}</div>`;
+  const c=WX.current,[ct,ck]=wxInfo(c.weather_code);
+  const stale=WXSTALE?`<div class="small muted">Saved forecast from ${WXSNAP_DATE}. Live weather can't load in this view, so check again closer to the trip.</div>`:'';
+  const di=WX.daily.time.indexOf(dkey);
+  let strip='';
+  if(di>=0){
+    const hrs=[];for(let h=12;h<=21;h++){const k=dkey+'T'+String(h).padStart(2,'0')+':00';const j=WX.hourly.time.indexOf(k);if(j>=0)hrs.push({h,t:Math.round(WX.hourly.temperature_2m[j]),p:WX.hourly.precipitation_probability[j],c:WX.hourly.weather_code[j]})}
+    strip=`<div class="hours" role="list" aria-label="Hourly forecast for ${dayLabel(dkey)}">${hrs.map(x=>`<div class="hr" role="listitem"><span class="muted">${fmtHour(x.h)}</span>${wxIcon(wxInfo(x.c)[1],24)}<b class="num">${x.t}°</b><span class="num" style="color:${x.p>=40?'var(--accent)':'var(--muted)'}">${x.p}%</span></div>`).join('')}</div>`}
+  return`<div class="row" style="flex-wrap:wrap;gap:16px">
+    <div class="row">${wxIcon(ck,44)}<div><div style="font:800 34px/1 var(--display)" class="num">${Math.round(c.temperature_2m)}°</div><div class="small muted">${ct} · feels ${Math.round(c.apparent_temperature)}°</div></div></div>
+    <div class="small muted">${WXSTALE?'Conditions on '+WXSNAP_DATE:'Right now at the park'}<br>Wind ${Math.round(c.wind_speed_10m)} mph</div></div>${stale}
+  ${di>=0?`<div class="row sb"><div><b>${dayLabel(dkey)}</b> <span class="muted">· high ${Math.round(WX.daily.temperature_2m_max[di])}° low ${Math.round(WX.daily.temperature_2m_min[di])}° · ${WX.daily.precipitation_probability_max[di]}% rain</span></div></div>${strip}<div class="small">${esc(advice(dkey))}</div>`:'<div class="muted small">Forecasts reach about 16 days ahead. Check back closer to your visit.</div>'}`}
+
+/* ---- map ---- */
+const MIN_LON=-76.6600,MAX_LON=-76.6516,MIN_LAT=40.2858,MAX_LAT=40.2942;
+const KX=111320*Math.cos(LAT*Math.PI/180),KY=110574;
+const MW=(MAX_LON-MIN_LON)*KX,MH=(MAX_LAT-MIN_LAT)*KY;
+const proj=(la,lo)=>[(lo-MIN_LON)*KX,(MAX_LAT-la)*KY];
+function viewBox(){const w=MW/UI.zoom,h=MH/UI.zoom;UI.vx=Math.max(0,Math.min(MW-w,UI.vx));UI.vy=Math.max(0,Math.min(MH-h,UI.vy));return[UI.vx,UI.vy,w,h]}
+function viewMap(){
+  const planIds=itemsFor(UI.day).filter(i=>i.ride).map(i=>i.ride);
+  const [vx,vy,vw,vh]=viewBox();
+  const z=UI.zoom,pr=12/Math.pow(z,.65),fs=11/Math.pow(z,.55);
+  let g='';
+  for(let x=0;x<=MW;x+=100)g+=`<line x1="${x}" y1="0" x2="${x}" y2="${MH}"/>`;for(let y=0;y<=MH;y+=100)g+=`<line x1="0" y1="${y}" x2="${MW}" y2="${y}"/>`;
+  const pos={};
+  const groups={};RIDES.forEach(r=>{const k=r.la.toFixed(5)+r.lo.toFixed(5);(groups[k]=groups[k]||[]).push(r.id)});
+  RIDES.forEach(r=>{let[x,y]=proj(r.la,r.lo);const g2=groups[r.la.toFixed(5)+r.lo.toFixed(5)];if(g2.length>1){const i=g2.indexOf(r.id);x+=(i-(g2.length-1)/2)*pr*2.1}pos[r.id]=[x,y]});
+  let route='';
+  if(UI.route){const pts=planIds.map(id=>pos[id]);if(pts.length>1)route=`<polyline points="${pts.map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="${2.2/Math.pow(z,.5)}" stroke-dasharray="${8/z} ${6/z}" opacity=".75"/>`}
+  const pins=RIDES.slice().sort((a,b)=>(UI.sel===a.id)-(UI.sel===b.id)).map(r=>{
+    const[x,y]=pos[r.id],l=rideLive(r.id),k=wcls(l),sel=UI.sel===r.id,inPlan=planIds.indexOf(r.id);
+    const txt=l.status==='OPERATING'&&l.wait!=null?l.wait:'';
+    const showLbl=sel||r.c==='coaster'||z>=2.2;
+    return`<g data-ride="${r.id}" style="cursor:pointer" role="button" tabindex="0" aria-label="${esc(r.n)}, ${esc(stText(l))}">
+      ${inPlan>=0?`<circle cx="${x}" cy="${y}" r="${pr+4}" fill="none" stroke="var(--accent)" stroke-width="${2.4/Math.pow(z,.5)}"/>`:''}
+      <circle cx="${x}" cy="${y}" r="${pr}" fill="${wcol[k]}" stroke="${sel?'var(--ink)':'var(--surface)'}" stroke-width="${sel?3/Math.pow(z,.5):1.6}"/>
+      ${txt!==''?`<text x="${x}" y="${y+fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="#fff" font-family="DM Sans,sans-serif" style="pointer-events:none">${txt}</text>`:''}
+      ${showLbl?`<text x="${x}" y="${y-pr-4}" text-anchor="middle" font-size="${fs*1.05}" font-weight="700" fill="var(--ink)" stroke="var(--surface)" stroke-width="${fs*.35}" paint-order="stroke" font-family="DM Sans,sans-serif" style="pointer-events:none">${esc(r.n)}</text>`:''}</g>`}).join('');
+  const[gx,gy]=proj(LAT,LON);
+  const sel=UI.sel&&BYID[UI.sel];
+  return`
+  <div class="row sb"><h2>Park map</h2>${dayPicker()}</div>
+  ${banner()}
+  <div class="mapbox" id="mapbox">
+    <svg id="mapsvg" viewBox="${vx} ${vy} ${vw} ${vh}" role="img" aria-label="Map of Hersheypark with ride pins colored by wait time">
+      <rect x="0" y="0" width="${MW}" height="${MH}" fill="var(--surface2)"/>
+      <g stroke="var(--line)" stroke-width="1" opacity=".7">${g}</g>
+      <g transform="translate(${gx},${gy})"><rect x="${-pr}" y="${-pr*.7}" width="${pr*2}" height="${pr*1.4}" rx="4" fill="var(--ink)"/><text y="${fs*.36}" text-anchor="middle" font-size="${fs*.9}" font-weight="800" fill="var(--bg)" font-family="DM Sans,sans-serif">GATE</text></g>
+      ${route}${pins}
+      <g transform="translate(${MW-40},${MH-26})" font-family="DM Sans,sans-serif" font-size="11" fill="var(--muted)"><line x1="-100" y1="0" x2="0" y2="0" stroke="var(--muted)" stroke-width="2"/><text x="-100" y="-6">100 m</text></g>
+      <text x="${MW-24}" y="30" font-size="16" font-weight="800" fill="var(--muted)" text-anchor="middle" font-family="DM Sans,sans-serif">N ↑</text>
+    </svg>
+    <div class="zoomctl"><button class="iconbtn" data-zoom="1" aria-label="Zoom in"><b>+</b></button><button class="iconbtn" data-zoom="-1" aria-label="Zoom out"><b>−</b></button><button class="iconbtn" data-zoom="0" aria-label="Reset view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
+  </div>
+  <div class="legend"><span><i style="background:var(--go)"></i>0–15 min</span><span><i style="background:var(--mid)"></i>20–35</span><span><i style="background:var(--stop)"></i>40+</span><span><i style="background:var(--off)"></i>Closed or no data</span><span><i style="background:none;border:2px solid var(--accent)"></i>On this day's plan</span></div>
+  <div class="row"><label class="row small"><input type="checkbox" id="routeChk" ${UI.route?'checked':''} style="min-height:0"> Draw this day's route</label></div>
+  ${sel?rideCard(sel):'<div class="muted small">Tap a pin for wait time details. Drag to pan, use + and − to zoom.</div>'}`}
+
+function rideCard(r){
+  const l=rideLive(r.id);
+  return`<div class="card" style="display:flex;flex-direction:column;gap:10px">
+    <div class="row sb"><div style="min-width:0"><div style="font:800 20px var(--display);overflow-wrap:anywhere">${esc(r.n)}</div><div class="meta small muted">${CATS[r.c]}${r.h?` · ${r.h[0]} ft${r.h[1]?` · ${r.h[1]} mph`:''}`:''}</div></div><span class="chip ${wcls(l)}">${esc(stText(l))}</span></div>
+    <div class="row" style="flex-wrap:wrap">${rideDayBtns(r.id)}</div></div>`}
+
+/* ---- waits ---- */
+function viewWaits(){
+  let list=RIDES.filter(r=>UI.filter==='all'||r.c===UI.filter).map(r=>({r,l:rideLive(r.id)}));
+  const rank=x=>x.l.status==='OPERATING'&&x.l.wait!=null?0:x.l.status==='OPERATING'?1:2;
+  list.sort((a,b)=>UI.sort==='name'?a.r.n.localeCompare(b.r.n):rank(a)-rank(b)||(b.l.wait||0)-(a.l.wait||0)||a.r.n.localeCompare(b.r.n));
+  const upd=LIVE.at?'Updated '+fmtClock(LIVE.at):'';
+  return`
+  <div class="row sb"><h2>Wait times</h2><span class="small muted">${UI.demo?'Demo data':upd}</span></div>
+  ${banner()}
+  <div class="row sb" style="flex-wrap:wrap">
+    <div class="seg" role="group" aria-label="Filter">${[['all','All'],['coaster','Coasters'],['thrill','Thrill'],['family','Family'],['kids','Kids']].map(([k,n])=>`<button data-filter="${k}" aria-pressed="${UI.filter===k}">${n}</button>`).join('')}</div>
+    <div class="seg" role="group" aria-label="Sort"><button data-sort="wait" aria-pressed="${UI.sort==='wait'}">Longest</button><button data-sort="name" aria-pressed="${UI.sort==='name'}">A–Z</button></div></div>
+  <div class="card"><div class="list">${list.map(({r,l})=>{const k=wcls(l);return`<div class="ride"><div style="min-width:0"><div class="nm">${esc(r.n)}</div><div class="meta">${CATS[r.c]}${r.h?` · ${r.h[0]} ft${r.h[1]?` · ${r.h[1]} mph`:''}`:''}</div></div>
+    <div class="wait num" style="color:${wcol[k]}">${l.status==='OPERATING'&&l.wait!=null?l.wait+'<small style="font:500 12px var(--body)"> min</small>':`<span class="chip off">${esc(stText(l))}</span>`}</div>
+    <div class="acts"><button class="mini" data-showmap="${r.id}">On map</button>${rideDayBtns(r.id)}</div></div>`}).join('')}</div></div>
+  <div class="row"><label class="row small"><input type="checkbox" id="demoChk" ${UI.demo?'checked':''} style="min-height:0"> Show demo waits (made-up numbers, for previewing)</label></div>
+  <div class="small muted">Waterpark rides are left out because they are closed for the season. Live data from themeparks.wiki.</div>`}
+
+/* ---- plan ---- */
+function viewPlan(){
+  const ds=days(),d=UI.day;
+  const last=ds[ds.length-1];const nd=last?addDays(last,1):nextSaturday();
+  const manage=`<div class="card" style="display:flex;flex-direction:column;gap:10px"><h3>Your park days</h3>
+    ${ds.length?`<div class="list">${ds.map(k=>`<div class="item" style="grid-template-columns:1fr auto"><div style="min-width:0"><div class="lbl" style="font-weight:700">${esc(dayLong(k))}</div><div class="t">${hrsTxt(k)} · ${(S.plan[k]||[]).length} stops</div></div><button class="mini" data-rmday="${k}">${UI.confirmRm===k?'Tap again to remove':'Remove'}</button></div>`).join('')}</div>`:'<div class="muted small">No days yet. Add the dates you are visiting.</div>'}
+    <div class="form">
+      <label class="small muted">Date<br><input type="date" id="addDayDate" value="${nd}" style="width:100%"></label>
+      <label class="small muted">Arrive at<br><input type="time" id="addDayArrive" value="${(hoursFor(nd)?fromMin(Math.max(0,toMin(hoursFor(nd).open)-15)):'10:45')}" style="width:100%"></label>
+    </div>
+    <label class="row small"><input type="checkbox" id="addDaySeed" checked style="min-height:0"> Start with a suggested coaster-heavy plan</label>
+    <div class="row"><button class="btn" id="addDayBtn">Add day</button></div>
+    <div id="dayNote" class="small muted"></div></div>`;
+  if(!d)return`<div class="row sb"><h2>Plan</h2></div>${manage}`;
+  const items=itemsFor(d),done=items.filter(i=>isDone(i.id)).length;
+  const opts=RIDES.slice().sort((a,b)=>a.n.localeCompare(b.n)).map(r=>`<option value="${r.id}">${esc(r.n)}</option>`).join('');
+  return`
+  <div class="row sb"><h2>Itinerary</h2>${dayPicker()}</div>
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="row sb"><b>${esc(dayLong(d))}</b><span class="small muted">Park ${hrsTxt(d)}</span></div>
+    <div class="row"><div class="bar" style="flex:1"><span style="width:${items.length?done/items.length*100:0}%"></span></div><span class="small num muted">${done}/${items.length}</span></div>
+    <div class="list">${items.map(it=>`<div class="item ${isDone(it.id)?'done':''}">
+      <button class="check" role="checkbox" aria-checked="${isDone(it.id)}" aria-label="Done: ${esc(itemName(it))}" data-done="${it.id}">${isDone(it.id)?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
+      <div style="min-width:0"><div class="t">${fmtT(it.t)} · <span class="kind">${it.kind==='ride'?CATS[BYID[it.ride].c]+' ride':it.kind==='food'?'Food':'Note'}</span></div><div class="lbl">${esc(itemName(it))}</div></div>
+      <div class="row">${it.ride&&!isDone(it.id)?waitChip(it.ride):''}${isDone(it.id)&&S.done[it.id].wait!=null&&it.ride?`<span class="small muted num">waited ${S.done[it.id].wait}m</span>`:''}${UI.edit?`<button class="mini" data-del="${it.id}" aria-label="Remove ${esc(itemName(it))}">Remove</button>`:''}</div></div>`).join('')||'<div class="muted">Nothing planned yet. Add stops below or fill it with the suggested plan.</div>'}</div>
+    <div class="row" style="flex-wrap:wrap"><button class="btn ghost" id="editBtn">${UI.edit?'Done editing':'Edit plan'}</button><button class="btn ghost" id="resetBtn">Fill with suggested plan</button></div>
+    <div id="resetNote" class="small muted"></div>
+  </div>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px"><h3>Add to ${esc(dayLabel(d))}</h3>
+    <div class="form">
+      <label class="small muted">Time<br><input type="time" id="addTime" value="${items.length?items[items.length-1].t:'12:00'}" style="width:100%"></label>
+      <label class="small muted">Ride<br><select id="addRide" style="width:100%"><option value="">Choose a ride…</option>${opts}</select></label>
+      <label class="small muted">Or a stop<br><input type="text" id="addText" placeholder="Pretzels, photo, bathroom…" style="width:100%"></label>
+    </div>
+    <div class="row"><button class="btn" id="addBtn">Add</button></div>
+  </div>
+  ${manage}
+  <div class="small muted">Checklist is saved on this device. Ticking a ride logs the live wait at that moment for your recap.</div>`}
+
+/* ---- recap ---- */
+function stats(){
+  const all=Object.values(S.plan).flat();const dn=all.filter(i=>S.done[i.id]);
+  const rides=dn.filter(i=>i.ride),food=dn.filter(i=>i.kind==='food');
+  const uniq=new Set(rides.map(i=>i.ride));
+  const coast=rides.filter(i=>BYID[i.ride].c==='coaster');
+  const waits=rides.map(i=>({i,w:S.done[i.id].wait})).filter(x=>x.w!=null);
+  const totalWait=waits.reduce((a,x)=>a+x.w,0);
+  const longest=waits.sort((a,b)=>b.w-a.w)[0];
+  const known=[...uniq].map(id=>BYID[id]).filter(r=>r.h);
+  const fast=[...uniq].map(id=>BYID[id]).filter(r=>r.h&&r.h[1]).sort((a,b)=>b.h[1]-a.h[1])[0];
+  const high=known.sort((a,b)=>b.h[0]-a.h[0])[0];
+  let inPark=0;for(const d of S.days)if(S.arrive[d])inPark+=(S.leave[d]||Math.max(S.arrive[d],Math.min(Date.now(),Math.max(0,...Object.values(S.done).map(x=>x.ts)))))-S.arrive[d];
+  const fav=Object.entries(S.rate).sort((a,b)=>b[1]-a[1])[0];
+  return{laps:rides.length,uniq:[...uniq],coast:coast.length,coastU:new Set(coast.map(i=>i.ride)).size,totalWait,longest,fast,high,food:food.length,inPark,fav,total:all.filter(i=>i.kind==='ride').length}}
+function viewWrap(){
+  const s=stats();const mins=Math.round(s.inPark/6e4);
+  const ride=s.laps*2.5;const ratio=s.laps&&s.totalWait?(s.totalWait/ride):0;
+  const head=s.laps===0?'Your recap fills in as you check things off':s.laps<8?'Warming up':s.laps<16?'Solid day at the park':'Full-send weekend';
+  const aw=[];
+  if(s.longest)aw.push(['L','Line survivor',`${s.longest.w} min wait for ${esc(BYID[s.longest.i.ride].n)}`]);
+  if(s.fast)aw.push(['S','Speed demon',`${esc(s.fast.n)} tops out at ${s.fast.h[1]} mph`]);
+  if(s.high)aw.push(['H','High flyer',`${esc(s.high.n)} reaches ${s.high.h[0]} ft`]);
+  if(s.fav&&s.fav[1]>=4&&BYID[s.fav[0]])aw.push(['★','Family favorite',esc(BYID[s.fav[0]].n)]);
+  if(s.food)aw.push(['C','Sweet tooth',`${s.food} food stop${s.food>1?'s':''} checked off`]);
+  const rated=s.uniq.map(id=>BYID[id]);
+  return`
+  <div class="ticket"><div class="lab">Trip recap</div><div class="big">${s.laps} ride${s.laps===1?'':'s'}</div><div class="lab" style="opacity:.9;text-transform:none;font-size:15px;letter-spacing:0">${head}</div></div>
+  <div class="tiles">
+    <div class="tile"><b class="num">${s.uniq.length}</b><span>different rides of ${RIDES.length}</span></div>
+    <div class="tile"><b class="num">${s.coast}</b><span>coaster laps (${s.coastU} coasters)</span></div>
+    <div class="tile"><b class="num">${s.totalWait}<small style="font-size:16px"> min</small></b><span>logged in line${ratio?` — about ${ratio.toFixed(1)}x the ride time`:''}</span></div>
+    <div class="tile"><b class="num">${mins?Math.floor(mins/60)+'h '+(mins%60)+'m':'—'}</b><span>time in the park${mins?'':' (tap "We\'re at the park" on Today)'}</span></div>
+  </div>
+  ${aw.length?`<div class="card"><h3 style="margin-bottom:6px">Awards</h3>${aw.map(a=>`<div class="award"><div class="ic">${a[0]}</div><div><b>${a[1]}</b><div class="small muted">${a[2]}</div></div></div>`).join('')}</div>`:''}
+  ${rated.length?`<div class="card"><h3 style="margin-bottom:6px">Rate your rides</h3><div class="list">${rated.map(r=>`<div class="ride"><div class="nm">${esc(r.n)}</div><div class="stars" role="group" aria-label="Rating for ${esc(r.n)}">${[1,2,3,4,5].map(n=>`<button data-rate="${r.id}" data-n="${n}" class="${(S.rate[r.id]||0)>=n?'on':''}" aria-label="${n} star${n>1?'s':''}">★</button>`).join('')}</div></div>`).join('')}</div></div>`:''}
+  <div class="row"><button class="btn" id="copyBtn">Copy recap to share</button><span id="copyNote" class="small muted"></span></div>
+  <div class="small muted">Ride time is estimated at 2.5 minutes a lap. Speed and height come from published coaster specs for the rides that have them.</div>`}
+
+/* ---------- render ---------- */
+const VIEWS={today:viewToday,map:viewMap,waits:viewWaits,plan:viewPlan,wrap:viewWrap};
+function render(){
+  $('#tabs').innerHTML=TABS.map(([k,n])=>`<button data-tab="${k}" ${UI.tab===k?'aria-current="page"':''}>${svgi(k==='today'?'today':k)}${n}</button>`).join('');
+  for(const k in VIEWS){const el=$('#v-'+k);el.hidden=k!==UI.tab}
+  const keepFocus=document.activeElement&&document.activeElement.id;
+  const el=$('#v-'+UI.tab);const fx=window.scrollX,fy=window.scrollY;
+  el.innerHTML=VIEWS[UI.tab]();window.scrollTo(fx,fy);
+  if(keepFocus){const f=document.getElementById(keepFocus);if(f&&f.focus)try{f.focus({preventScroll:true})}catch(e){}}
+  $('#sub').textContent='Hershey, PA · '+tripTitle();
+  const dot=$('#syncDot'),tx=$('#syncTxt');
+  if(UI.demo){dot.className='dot';tx.textContent='Demo waits'}
+  else if(LIVE.ok){dot.className='dot live';tx.textContent='Live · '+fmtClock(LIVE.at)}
+  else if(LIVE.err){dot.className='dot bad';tx.textContent='Offline'}
+  else{dot.className='dot';tx.textContent='Connecting…'}
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tab],[data-day],[data-done],[data-filter],[data-sort],[data-ride],[data-zoom],[data-addplan],[data-rmday],#addDayBtn,[data-showmap],[data-del],[data-rate],[data-arrive],[data-leave],#editBtn,#addBtn,#resetBtn,#copyBtn,#refresh,#demoChk,#routeChk');
+  if(!t)return;const d=t.dataset;
+  if(d.tab){UI.tab=d.tab;render();window.scrollTo(0,0);return}
+  if(d.day){UI.day=d.day;render();return}
+  if(d.done){toggleDone(d.done);return}
+  if(d.filter){UI.filter=d.filter;render();return}
+  if(d.sort){UI.sort=d.sort;render();return}
+  if(d.ride){UI.sel=UI.sel===d.ride?null:d.ride;render();return}
+  if(d.zoom!==undefined){const dz=+d.zoom;if(dz===0){UI.zoom=1;UI.vx=UI.vy=0}else{const cx=UI.vx+MW/UI.zoom/2,cy=UI.vy+MH/UI.zoom/2;UI.zoom=Math.max(1,Math.min(5,UI.zoom*(dz>0?1.5:1/1.5)));UI.vx=cx-MW/UI.zoom/2;UI.vy=cy-MH/UI.zoom/2}render();return}
+  if(d.addplan){togglePlan(d.addplan,d.d);return}
+  if(d.showmap){UI.sel=d.showmap;UI.tab='map';const[x,y]=proj(BYID[d.showmap].la,BYID[d.showmap].lo);UI.zoom=2.5;UI.vx=x-MW/5;UI.vy=y-MH/5;render();window.scrollTo(0,0);return}
+  if(d.rmday){if(UI.confirmRm!==d.rmday){UI.confirmRm=d.rmday;render();return}
+    const k=d.rmday;(S.plan[k]||[]).forEach(i=>delete S.done[i.id]);delete S.plan[k];delete S.arrive[k];delete S.leave[k];S.days=S.days.filter(x=>x!==k);UI.confirmRm=null;if(UI.day===k)UI.day=pickDay();save();render();return}
+  if(t.id==='addDayBtn'){
+    const v=$('#addDayDate').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){$('#dayNote').textContent='Choose a date first.';return}
+    if(S.days.includes(v)){UI.day=v;render();return}
+    S.days.push(v);S.plan[v]=$('#addDaySeed').checked?seedDay(v,S.days.length-1,$('#addDayArrive').value||null):[];UI.day=v;save();render();return}
+  if(d.del){for(const k in S.plan)S.plan[k]=S.plan[k].filter(i=>i.id!==d.del);delete S.done[d.del];save();render();return}
+  if(d.rate){S.rate[d.rate]=S.rate[d.rate]===+d.n?0:+d.n;save();render();return}
+  if(d.arrive){S.arrive[d.arrive]=Date.now();save();render();return}
+  if(d.leave){S.leave[d.leave]=Date.now();save();render();return}
+  if(t.id==='editBtn'){UI.edit=!UI.edit;render();return}
+  if(t.id==='addBtn'){
+    const tm=$('#addTime').value||'12:00',rid=$('#addRide').value,tx=$('#addText').value.trim();
+    if(rid)S.plan[UI.day].push({id:UI.day+(S.seq++),t:tm,kind:'ride',ride:rid,label:null});
+    else if(tx)S.plan[UI.day].push({id:UI.day+(S.seq++),t:tm,kind:/eat|lunch|dinner|snack|pretzel|food|chocolate|ice|drink/i.test(tx)?'food':'note',ride:null,label:tx.slice(0,80)});
+    else return;save();render();return}
+  if(t.id==='resetBtn'){
+    if((S.plan[UI.day]||[]).length&&!UI.confirmReset){UI.confirmReset=true;$('#resetNote').textContent='Tap again to replace this day with the suggested plan. Checked items for this day will be cleared.';return}
+    UI.confirmReset=false;(S.plan[UI.day]||[]).forEach(i=>delete S.done[i.id]);S.plan[UI.day]=seedDay(UI.day,days().indexOf(UI.day),null);save();render();return}
+  if(t.id==='copyBtn'){
+    const s=stats();const txt=`Hersheypark weekend recap: ${s.laps} rides (${s.uniq.length} different), ${s.coast} coaster laps, ${s.totalWait} min logged in line.`;
+    const note=$('#copyNote');
+    (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>note.textContent='Copied.').catch(()=>{note.textContent=txt});return}
+  if(t.id==='refresh'){refreshAll(true);return}
+  if(t.id==='demoChk'){UI.demo=t.checked;render();return}
+  if(t.id==='routeChk'){UI.route=t.checked;render();return}
+});
+document.addEventListener('keydown',e=>{const g=e.target.closest&&e.target.closest('g[data-ride]');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();UI.sel=g.dataset.ride;render()}});
+/* map drag */
+let drag=null;
+document.addEventListener('pointerdown',e=>{const s=e.target.closest('#mapsvg');if(!s||e.target.closest('[data-ride]'))return;drag={x:e.clientX,y:e.clientY,vx:UI.vx,vy:UI.vy,w:s.getBoundingClientRect().width,moved:false};s.setPointerCapture&&s.setPointerCapture(e.pointerId)});
+document.addEventListener('pointermove',e=>{if(!drag)return;const k=(MW/UI.zoom)/drag.w;UI.vx=drag.vx-(e.clientX-drag.x)*k;UI.vy=drag.vy-(e.clientY-drag.y)*k;const s=$('#mapsvg');if(s){const[a,b,c,d]=viewBox();s.setAttribute('viewBox',`${a} ${b} ${c} ${d}`)}});
+document.addEventListener('pointerup',()=>{if(drag){drag=null;if(UI.tab==='map')render()}});
+document.addEventListener('wheel',e=>{if(!e.target.closest('#mapsvg'))return;e.preventDefault();const dz=e.deltaY<0?1.2:1/1.2;const cx=UI.vx+MW/UI.zoom/2,cy=UI.vy+MH/UI.zoom/2;UI.zoom=Math.max(1,Math.min(5,UI.zoom*dz));UI.vx=cx-MW/UI.zoom/2;UI.vy=cy-MH/UI.zoom/2;render()},{passive:false});
+
+async function refreshAll(force){await Promise.all([loadLive(),force||!WX?loadWx():0,Object.keys(SCHED).length?0:loadSched()]);render()}
+render();
+refreshAll();
+setInterval(()=>{if(!document.hidden)loadLive().then(render)},60000);
+setInterval(()=>{if(!document.hidden)loadWx().then(render)},900000);
+</script>
+
+</body>
+</html>
